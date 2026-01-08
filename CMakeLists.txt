@@ -16,9 +16,6 @@ find_package(ament_cmake REQUIRED)
 foreach(dep IN ITEMS ${THIS_PROJECT_DEPEND})
   find_package(${dep} REQUIRED)
 endforeach(dep)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 
 add_executable(teleop_mapper src/teleop_mapper_node.cpp)
 ament_target_dependencies(teleop_mapper
