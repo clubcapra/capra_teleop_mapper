@@ -1,6 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joy.hpp>
-#include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/bool.hpp>
 
 using std::placeholders::_1;
 
@@ -8,7 +8,7 @@ class TeleopMapper : public rclcpp::Node
 {
 public:
   TeleopMapper()
-  : Node("teleop_mapper"), active_(1)
+  : Node("teleop_mapper"), selected_(1)
   {
     joy_pub_ = this->create_publisher<sensor_msgs::msg::Joy>(
       "/joy", rclcpp::QoS(10));
@@ -21,7 +21,7 @@ public:
       "/joy2", rclcpp::QoS(10),
       std::bind(&TeleopMapper::joy2_cb, this, _1));
 
-    select_sub_ = this->create_subscription<std_msgs::msg::Int32>(
+    select_sub_ = this->create_subscription<std_msgs::msg::Bool>(
       "/joy_select", rclcpp::QoS(10),
       std::bind(&TeleopMapper::select_cb, this, _1));
 
@@ -29,38 +29,31 @@ public:
   }
 
 private:
-  void select_cb(const std_msgs::msg::Int32::SharedPtr msg)
+  void select_cb(const std_msgs::msg::Bool::SharedPtr msg)
   {
-    if (msg->data == 1 || msg->data == 2) {
-      active_ = msg->data;
-      RCLCPP_INFO(this->get_logger(), "Switched to /joy%d", active_);
-    } else {
-      RCLCPP_WARN(this->get_logger(),
-                  "Invalid joy_select value: %d (use 1 or 2)",
-                  msg->data);
-    }
+    selected_ = msg->data;
   }
 
   void joy1_cb(const sensor_msgs::msg::Joy::SharedPtr msg)
   {
-    if (active_ == 1) {
+    if (!selected_) {
       joy_pub_->publish(*msg);
     }
   }
 
   void joy2_cb(const sensor_msgs::msg::Joy::SharedPtr msg)
   {
-    if (active_ == 2) {
+    if (selected_) {
       joy_pub_->publish(*msg);
     }
   }
 
-  int active_;
+  bool selected_;
 
   rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr joy_pub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy1_sub_;
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy2_sub_;
-  rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr select_sub_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr select_sub_;
 };
 
 int main(int argc, char ** argv)
